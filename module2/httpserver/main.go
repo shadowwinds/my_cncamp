@@ -29,6 +29,7 @@ func ErrorHandler(write2 error) {
 		log.Printf("Error: %s", write2)
 	}
 }
+
 func ReadUserIP(r *http.Request) string {
 	IPAddress := r.Header.Get("X-Real-Ip")
 	if IPAddress == "" {
