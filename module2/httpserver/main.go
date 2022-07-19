@@ -65,9 +65,12 @@ func main() {
 	setEnvErr := os.Setenv(VERSION_KEY, "1.0.0")
 	ErrorHandler(setEnvErr)
 
-	port := "8080"
-	log.Println("Listening on :" + port)
+	httpPort := os.Getenv("HTTP_PORT")
+	if httpPort == "" {
+		httpPort = "8080"
+	}
+	log.Println("Listening on :" + httpPort)
 	http.HandleFunc("/health", ResponseLoggingHandler(healthHandler))
 	http.HandleFunc("/", ResponseLoggingHandler(mirrorHandler))
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+httpPort, nil))
 }
