@@ -29,6 +29,16 @@ func ErrorHandler(write2 error) {
 		log.Printf("Error: %s", write2)
 	}
 }
+func ReadUserIP(r *http.Request) string {
+	IPAddress := r.Header.Get("X-Real-Ip")
+	if IPAddress == "" {
+		IPAddress = r.Header.Get("X-Forwarded-For")
+	}
+	if IPAddress == "" {
+		IPAddress = r.RemoteAddr
+	}
+	return IPAddress
+}
 
 // ResponseLoggingHandler https://stackoverflow.com/questions/29319783/logging-responses-to-incoming-http-requests-inside-http-handlefunc
 func ResponseLoggingHandler(next http.HandlerFunc) http.HandlerFunc {
@@ -46,7 +56,7 @@ func ResponseLoggingHandler(next http.HandlerFunc) http.HandlerFunc {
 		w.WriteHeader(c.Code)
 		_, err := c.Body.WriteTo(w)
 		ErrorHandler(err)
-		log.Printf("%s %s %s %s %d", r.RemoteAddr, r.Method, r.URL, r.Proto, c.Code)
+		log.Printf("%s %s %s %s %d", ReadUserIP(r), r.Method, r.URL, r.Proto, c.Code)
 	}
 }
 
