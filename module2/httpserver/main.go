@@ -26,7 +26,7 @@ func healthHandler(writer http.ResponseWriter, _ *http.Request) {
 
 func ErrorHandler(write2 error) {
 	if write2 != nil {
-		log.Fatal(write2)
+		log.Printf("Error: %s", write2)
 	}
 }
 
@@ -58,6 +58,5 @@ func main() {
 	log.Println("Listening on :" + port)
 	http.HandleFunc("/health", ResponseLoggingHandler(healthHandler))
 	http.HandleFunc("/", ResponseLoggingHandler(mirrorHandler))
-	err := http.ListenAndServe(":"+port, nil)
-	ErrorHandler(err)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
