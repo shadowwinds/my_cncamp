@@ -16,7 +16,7 @@ func mirrorHandler(writer http.ResponseWriter, request *http.Request) {
 			respHeader.Add(k, vv)
 		}
 	}
-	respHeader.Set(VERSION_KEY, os.Getenv(VERSION_KEY))
+	respHeader.Set("version", os.Getenv(VERSION_KEY))
 }
 
 func healthHandler(writer http.ResponseWriter, _ *http.Request) {
