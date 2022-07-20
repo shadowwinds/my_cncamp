@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-const VERSION_KEY = "VERSION "
+const VERSION_KEY = "VERSION"
 
 func mirrorHandler(writer http.ResponseWriter, request *http.Request) {
 	respHeader := writer.Header()
