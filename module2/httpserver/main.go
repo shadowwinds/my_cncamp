@@ -1,10 +1,10 @@
 package main
 
 import (
+	"io"
 	"log"
 	"net"
 	"net/http"
-	"net/http/httptest"
 	"os"
 )
 
@@ -45,24 +45,39 @@ func ReadUserIP(r *http.Request) string {
 	return IPAddress
 }
 
-// ResponseLoggingHandler https://stackoverflow.com/questions/29319783/logging-responses-to-incoming-http-requests-inside-http-handlefunc
-func ResponseLoggingHandler(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// switch out response writer for a recorder
-		// for all subsequent handlers
-		c := httptest.NewRecorder()
-		next(c, r)
+func Logger(out io.Writer, h http.Handler) http.Handler {
+	logger := log.New(out, "", 0)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		o := &responseObserver{ResponseWriter: w, status: 200}
+		h.ServeHTTP(o, r)
+		addr := ReadUserIP(r)
+		logger.Printf("%s %s %s %s %d %d", addr, r.Method, r.URL.Path, r.Proto, o.status, o.written)
+	})
+}
 
-		// copy everything from response recorder
-		// to actual response writer
-		for k, v := range c.Header() {
-			w.Header()[k] = v
-		}
-		w.WriteHeader(c.Code)
-		_, err := c.Body.WriteTo(w)
-		ErrorHandler(err)
-		log.Printf("%s %s %s %s %d", ReadUserIP(r), r.Method, r.URL, r.Proto, c.Code)
+type responseObserver struct {
+	http.ResponseWriter
+	status      int
+	written     int64
+	wroteHeader bool
+}
+
+func (o *responseObserver) Write(p []byte) (n int, err error) {
+	if !o.wroteHeader {
+		o.WriteHeader(http.StatusOK)
 	}
+	n, err = o.ResponseWriter.Write(p)
+	o.written += int64(n)
+	return
+}
+
+func (o *responseObserver) WriteHeader(code int) {
+	o.ResponseWriter.WriteHeader(code)
+	if o.wroteHeader {
+		return
+	}
+	o.wroteHeader = true
+	o.status = code
 }
 
 func main() {
@@ -74,7 +89,7 @@ func main() {
 		httpPort = "8080"
 	}
 	log.Println("Listening on :" + httpPort)
-	http.HandleFunc("/health", ResponseLoggingHandler(healthHandler))
-	http.HandleFunc("/", ResponseLoggingHandler(mirrorHandler))
-	log.Fatal(http.ListenAndServe(":"+httpPort, nil))
+	http.HandleFunc("/health", healthHandler)
+	http.HandleFunc("/", mirrorHandler)
+	log.Fatal(http.ListenAndServe(":"+httpPort, Logger(os.Stderr, http.DefaultServeMux)))
 }
