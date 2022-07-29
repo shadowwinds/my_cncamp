@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -37,6 +38,9 @@ func ReadUserIP(r *http.Request) string {
 	}
 	if IPAddress == "" {
 		IPAddress = r.RemoteAddr
+	}
+	if ip, _, err := net.SplitHostPort(IPAddress); err == nil {
+		IPAddress = ip
 	}
 	return IPAddress
 }
